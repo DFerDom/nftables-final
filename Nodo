@@ -1,0 +1,22 @@
+sudo nft flush ruleset
+
+sudo nft add table inet filter
+nft add chain inet filter input { type filter hook input priority 0 \; }
+nft add chain inet filter output { type filter hook output priority 0 \; }
+sudo nft add rule inet filter input iifname "enp0s3" tcp dport 22 accept
+sudo nft add rule inet filter output oifname "enp0s3" tcp sport 22 accept
+
+nft add rule inet filter input iifname "enp0s8"  ip protocol icmp icmp type echo-reply accept
+nft add rule inet filter input iifname "enp0s8"  ip protocol icmp icmp type echo-request accept
+nft add rule inet filter input iifname "enp0s8"  ip protocol udp udp sport 53 accept
+nft add rule inet filter input iifname "enp0s8"  ip protocol tcp tcp sport 80 accept
+nft add rule inet filter input iifname "enp0s8"  ip protocol tcp tcp sport 443 accept
+
+nft add rule inet filter output oifname "enp0s8"  ip protocol icmp icmp type echo-reply accept
+nft add rule inet filter output oifname "enp0s8"  ip protocol icmp icmp type echo-request accept
+nft add rule inet filter output oifname "enp0s8"  ip protocol udp udp dport 53 accept
+nft add rule inet filter output oifname "enp0s8"  ip protocol tcp tcp dport 80 accept
+nft add rule inet filter output oifname "enp0s8"  ip protocol tcp tcp dport 443 accept
+
+nft add rule inet filter input drop
+nft add rule inet filter output drop
