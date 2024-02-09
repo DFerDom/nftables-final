@@ -13,8 +13,8 @@ fi
 
 echo
 #Ping para fachada
-echo “ping -c 1 172.22.225.64”
-ping -c 1 172.22.225.64 &>/dev/null
+echo “ping -c 1 192.168.111.1”
+ping -c 1 192.168.111.1 &>/dev/null
 if [ $? -eq 0 ]
 then
         echo "Si es posible la conexión con fachada"
