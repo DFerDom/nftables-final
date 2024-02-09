@@ -19,83 +19,93 @@ SCRIPT
 
   config.vm.provision "todas", type: "shell" do |s|
     s.inline = $script
-  end
+  end 
 
   config.vm.provision "todas_siempre", type: "shell",
-        run: "always" do |ts|
+	run: "always" do |ts|
     ts.inline = $scriptAlways
-  end
-
+  end 
+  
   #config.vm.synced_folder "./", "/vagrant_data"
 
   config.vm.define "fachada", primary:true do |fachada|
-        fachada.vm.box = "ubuntu/focal64"
-        fachada.vm.hostname = "fachada"
+	fachada.vm.box = "ubuntu/focal64"
+	fachada.vm.hostname = "fachada"
+	
+	$scriptFachada = <<-'SCRIPT'
+	echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+	iptables -t nat -A POSTROUTING -o enp0s8 -j MASQUERADE
+	SCRIPT
+	fachada.vm.provision "fachada_once", type: "shell" do |fo|
+	  fo.inline = $scriptFachada
+	end
 
-        $scriptFachada = <<-'SCRIPT'
-        echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-        iptables -t nat -A POSTROUTING -o enp0s8 -j MASQUERADE
-        SCRIPT
-        fachada.vm.provision "fachada_once", type: "shell" do |fo|
-          fo.inline = $scriptFachada
-        end
+	fachada.vm.provision "conectividad", type: "shell",
+		inline: "ping -c 2 google.com"
 
-        fachada.vm.provision "conectividad", type: "shell",
-                inline: "ping -c 2 google.com"
 
-                #CAMBIADO
+		#CAMBIADO
 
-        fachada.vm.network "public_network",
-                use_dhcp_assigned_default_route: true
-        fachada.vm.network "private_network", ip: "192.168.33.1",
-                virtualbox__intnet: "lan"
-        fachada.vm.network "private_network", ip: "192.168.111.1",
+	fachada.vm.network "public_network", 
+		use_dhcp_assigned_default_route: true
+	fachada.vm.network "private_network", ip: "192.168.33.1",
+		virtualbox__intnet: "lan"
+	fachada.vm.network "private_network", ip: "192.168.111.1",
                 virtualbox__intnet: "dmz"
-  end
 
-  #Para levantar la maquina se requiere vagrant up lan
+	fachada.vm.provision "shell", path: "prueba-fachada.sh"
+		
+end 
+ 
+#Para levantar la maquina se requiere vagrant up lan
   config.vm.define "lan", autostart:false do |lan|
 
         lan.vm.box = "ubuntu/focal64"
-        lan.vm.hostname = "lan"
+	lan.vm.hostname = "lan"
 
-                #CAMBIADA
+		#CAMBIADA
 
-        $scriptGateway = <<-'SCRIPT'
-                ip r add default via 192.168.33.1
-                ping -c 2 192.168.33.1
-                ping -c 2 www.google.com
-        SCRIPT
-        lan.vm.provision "lan_all", type: "shell", run: "always" do |lgw|
+	$scriptGateway = <<-'SCRIPT'
+       		ip r add default via 192.168.33.1
+		ping -c 2 192.168.33.1
+		ping -c 2 www.google.com
+  	SCRIPT
+	lan.vm.provision "lan_all", type: "shell", run: "always" do |lgw|
           lgw.inline = $scriptGateway
         end
+	
+		#CAMBIADA
 
-                #CAMBIADA
+	lan.vm.network "private_network", ip: "192.168.33.2",
+		virtualbox__intnet: "lan"
+  
+	lan.vm.provision "shell", path: "prueba-lan.sh"
 
-        lan.vm.network "private_network", ip: "192.168.33.2",
-                virtualbox__intnet: "lan"
-  end
+end
 
-  #Para levantar la maquina se requiere vagrant up dmz
+  #Para levantar la maquina se requiere vagrant up dmz 
   config.vm.define "dmz", autostart:false do |dmz|
         dmz.vm.box = "ubuntu/focal64"
-        dmz.vm.hostname = "dmz"
+	dmz.vm.hostname = "dmz"
 
-                #CAMBIADA
+		#CAMBIADA
 
-        $scriptGateway = <<-'SCRIPT'
-                ip r add default via 192.168.111.1
-                ping -c 2 192.168.111.1
-                ping -c 2 google.com
+	$scriptGateway = <<-'SCRIPT'
+		ip r add default via 192.168.111.1
+		ping -c 2 192.168.111.1
+		ping -c 2 google.com
         SCRIPT
         dmz.vm.provision "lan_all", type: "shell", run: "always" do |dgw|
           dgw.inline = $scriptGateway
         end
+		
+		#CAMBIADA 
 
-                #CAMBIADA
-
-        dmz.vm.network "private_network", ip: "192.168.111.2",
+	dmz.vm.network "private_network", ip: "192.168.111.2",
                 virtualbox__intnet: "dmz"
-  end
+  
+	dmz.vm.provision "shell", path: "prueba-dmz.sh"
+
+end
 
 end
